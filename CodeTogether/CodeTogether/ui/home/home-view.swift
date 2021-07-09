@@ -6,51 +6,104 @@
 //
 
 import SwiftUI
-
+import Firebase
 struct HomeView: View {
     
+    @Binding var currentTab: HomeTabs
     @State var text = ""
     @State private var isPresented = false
     @State var showAddProjectView: Bool = false
+    @State var projects: [Project] = []
+    @State var allProjects: [Project] = []
+    @State var isLoading: Bool = false
     
     var body: some View {
-        GeometryReader{ geo in
-               
+       
+            ZStack(alignment: .center){
+                GeometryReader{ geo in
+                    
                 VStack{
                     NewProjectsHeader(showAddProjectView: $showAddProjectView)
-                        .padding(.bottom)
+                        .padding()
+                    
                     SearchBar(text: $text)
                     
-                    ScrollView{
-                        LazyVStack{
+                    VStack{
                             
-                            ProjectItemView()
-                                .frame(height: 250, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                            CustomDivider()
-                                .frame( height: 6, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+                        ScrollView(showsIndicators: false){
                             
-                            ProjectItemView()
-                                .frame(height: 250, alignment: .center)
-                            CustomDivider()
-                                .frame( height: 6, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+                            VStack{
+                              
+                                ForEach(projects){ project in
+                                    
+                                    ProjectItemView(currentTab: $currentTab, project: project)
+                                    
+                                }
+                        }
                             
-                            ProjectItemView()
-                                .frame(height: 250, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                            CustomDivider()
-                                .frame( height: 6, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                            
-                            ProjectItemView()
-                                .frame(height: 250, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                            CustomDivider()
-                                .frame( height: 6, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+                    }
+                    
+                    } .navigationBarTitle("Home", displayMode: .inline)
+                    .navigationBarHidden(true)
+                    .onChange(of: text){ data in
+                        if text.count == 0{
+                            projects.removeAll()
+                            for project in allProjects{
+                                projects.append(project)
+                            }
+                        }else{
+                            let projectsList = allProjects.filter { ($0.name?.lowercased().starts(with: text.lowercased()))! }
+                            projects = projectsList
                         }
                     }
-                    Spacer()
-                }.navigationTitle("Home")
-                .navigationBarTitle("", displayMode: .inline)
-                .navigationBarHidden(true)
-                .padding()
-            
+                    .onAppear{
+                        isLoading = true
+                        projects.removeAll()
+                        
+                        let docRef = Firestore.firestore()
+                            .collection("project_proposal")
+                            
+                        
+                        docRef.getDocuments() { (querySnapshot, err) in
+                            isLoading = false
+                            if let err = err {
+                                print("Error getting documents: \(err)")
+                            } else {
+                                for document in querySnapshot!.documents {
+                                    print("\(document.documentID) => \(document.data())")
+                                    let data = document.data()
+                                    if data != nil{
+                                        var project = Project()
+                                        project.name = data["name"] as? String
+                                        project.description = data["description"] as? String
+                                        project.skills = data["skills"] as? [String]
+                                        project.no_of_developers = data["no_of_developers"] as? String
+                                        project.user_id = data["user_id"] as? String
+                                        project.project_id = document.documentID
+                                        projects.append(project)
+                                        allProjects.append(project)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }.frame(width: geo.size.width, height: geo.size.height)
+                
+                
+                
+            }
+                if isLoading{
+                    
+                    ProgressView()
+                    
+                }else{
+                    
+                    if !isLoading && projects.count == 0{
+                        Text("Nothing to Show")
+                    }
+                    
+                }
         }
         
     }
@@ -71,7 +124,7 @@ struct NewProjectsHeader: View {
                         showAddProjectView = true
                     }
                 Spacer()
-                Text("John Doe")
+                Text("Home")
                     .bold()
                     .foregroundColor(Color.black)
                     .lineLimit(1)
@@ -85,17 +138,9 @@ struct NewProjectsHeader: View {
                         .opacity(1)
                         .foregroundColor(Color.blue)
                 }
-                
-                
-                
+            
             }
         }
     }
     
-}
-
-struct home_view_Previews: PreviewProvider {
-    static var previews: some View {
-        HomeView()
-    }
 }

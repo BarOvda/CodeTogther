@@ -6,35 +6,73 @@
 //
 
 import SwiftUI
+import Firebase
 
 struct ProfileView: View {
+    
+    @State var user: User = User()
+    var userId: String
+    
     var body: some View {
         GeometryReader{ geo in
-            ScrollView{
+            ScrollView(showsIndicators: false){
                 VStack{
-                    ProfileHeader()
+                    ProfileHeader(user: $user)
                     
-                    AboutView()
+                    AboutView(user: $user)
                         .padding(.top)
                     
-                    SkillsView()
+                    SkillsView(user: $user)
                         .padding(.top)
                     
-                    MapView()
+                    MapView(user: $user)
                         .padding(.top)
                     
-                    ContactInformationView()
+                    ContactInformationView(user: $user)
                         .padding(.top)
                 }.padding()
             }
         } .navigationBarTitle("", displayMode: .inline)
         .navigationBarHidden(false)
+        .onAppear{
+            getDocument()
+        }
     }
+    
+    
+    private func getDocument() {
+        //Get specific document from current user
+        
+        let docRef = Firestore.firestore()
+            .collection("user")
+            .document(userId)
+        
+        // Get data
+        docRef.getDocument { (document, error) in
+            guard let document = document, document.exists else {
+                print("Document does not exist")
+                return
+            }
+            if let data = document.data(){
+                var user = User()
+                user.username = data["name"] as? String
+                user.email = data["email"] as? String
+                user.pic = data["pic"] as? String
+                user.phone = data["phone"] as? String
+                user.about = data["about"] as? String
+                user.skills = data["skills"] as? [String]
+                user.lat = data["lat"] as? Double
+                user.lng = data["lng"] as? Double
+                self.user = user
+            }
+        }
+    }
+    
 }
 
 struct AboutView: View {
     
-    var desc = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book."
+    @Binding var user: User
     
     var body: some View{
         
@@ -48,7 +86,7 @@ struct AboutView: View {
             CustomDivider()
                 .frame(height: 7, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
             
-            Text(desc)
+            Text(user.about ?? "")
                 .font(.system(size: 12))
                 .foregroundColor(Color.black)
             
@@ -57,7 +95,22 @@ struct AboutView: View {
     }
 }
 
+import MapKit
+
 struct MapView: View {
+    @Binding var user: User
+    @State private var annoations: [Location] = []
+    @State private var region: MKCoordinateRegion =  MKCoordinateRegion(
+        center: CLLocationCoordinate2D(
+            latitude: 31.0,
+            longitude: 34.8
+        ),
+        span: MKCoordinateSpan(
+            latitudeDelta: 10,
+            longitudeDelta: 10
+        )
+    )
+    
     
     var body: some View{
         VStack(alignment: .leading){
@@ -71,8 +124,49 @@ struct MapView: View {
                 .frame(height: 7, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                 .padding(.top)
             
-            Rectangle()
+            Map(coordinateRegion: $region, annotationItems: annoations) { loc in
+//                    MapPin(coordinate: loc.coordinate, tint: .green)
+                MapMarker(coordinate: loc.coordinate, tint: .red)
+            }
                 .frame(height: 200, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+            .onChange(of: user.lng, perform: { value in
+                if user != nil{
+                   
+                    var location =  Location(coordinate: .init(latitude: (user.lat)!, longitude: (user.lng)!))
+                    
+                    annoations.append(location)
+                    
+                    region = MKCoordinateRegion(
+                        center: CLLocationCoordinate2D(
+                            latitude: (user.lat)!,
+                            longitude: (user.lng)!
+                        ),
+                        span: MKCoordinateSpan(
+                            latitudeDelta: 0.05,
+                            longitudeDelta: 0.05
+                        )
+                    )
+                }
+            }).onAppear{
+                if user.lng != 0.0{
+                   
+                    var location =  Location(coordinate: .init(latitude: (user.lat)!, longitude: (user.lng)!))
+                    
+                    annoations.append(location)
+                    
+                    region = MKCoordinateRegion(
+                        center: CLLocationCoordinate2D(
+                            latitude: (user.lat)!,
+                            longitude: (user.lng)!
+                        ),
+                        span: MKCoordinateSpan(
+                            latitudeDelta: 0.05,
+                            longitudeDelta: 0.05
+                        )
+                    )
+                }
+            }
+        
                 
             
             
@@ -81,6 +175,8 @@ struct MapView: View {
 }
 
 struct ContactInformationView: View {
+    
+    @Binding var user: User
     
     var body: some View{
         VStack(alignment: .leading){
@@ -103,7 +199,7 @@ struct ContactInformationView: View {
                 
                 Spacer()
                 
-                Text("johndoe@gmail.com")
+                Text(user.email ?? "")
                     .bold()
                     .font(.system(size: 15))
                     .foregroundColor(Color.black)
@@ -120,7 +216,7 @@ struct ContactInformationView: View {
                 
                 Spacer()
                 
-                Text("00000000")
+                Text(user.phone ?? "")
                     .bold()
                     .font(.system(size: 15))
                     .foregroundColor(Color.black)
@@ -137,45 +233,43 @@ struct ContactInformationView: View {
 
 struct SkillsView: View {
     
-    var desc = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book."
+    @Binding var user: User
     
+    let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
     var body: some View{
-        
+//        GeometryReader{ geo in
         VStack(alignment: .leading){
-            Text("Skills")
-                .bold()
-                .font(.system(size: 15))
-                .foregroundColor(Color.black)
-                .lineLimit(1)
+            HStack{
+                Text("Skills")
+                    .bold()
+                    .font(.system(size: 15))
+                    .foregroundColor(Color.black)
+                    .lineLimit(1)
+                Spacer()
+               
+            }
             
             CustomDivider()
                 .frame(height: 7, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
             
             
-                HStack(spacing: 10){
-                    SkillView()
+           
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(user.skills ?? [], id: \.self){ skill in
+                    SkillView(skill: skill)
                         .overlay(
                             RoundedRectangle(cornerRadius: 15)
                                 .stroke(Color.black, lineWidth: 1)
                         )
-                    SkillView()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.black, lineWidth: 1)
-                        )
-                    SkillView()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.black, lineWidth: 1)
-                        )
-                    SkillView()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.black, lineWidth: 1)
-                        )
-              
+                }
             }
-
+            
+            
         }
     }
 }
@@ -199,10 +293,13 @@ struct CustomDivider: View {
 }
 
 struct ProfileHeader: View{
+    
+    @Binding var user: User
+    
     var body: some View{
         HStack{
             
-            Text("Carlos Hooper")
+            Text(user.username ?? "")
                 .bold()
                 .font(.system(size: 20))
                 .foregroundColor(Color.black)
@@ -210,17 +307,11 @@ struct ProfileHeader: View{
             
             Spacer()
             
-            Image("placeholder")
-                .resizable()
-                .frame(width: 40, height: 40, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+            ImageDownloader(height:40, width:40,imageURL: user.pic ?? "", isCircleShape: true, placeHolder: { PlaceHolderView(circleShape: true) })
+                .id(UUID())
                 .cornerRadius(20)
             
+            
         }
-    }
-}
-
-struct profilea_view_Previews: PreviewProvider {
-    static var previews: some View {
-        ProfileView()
     }
 }

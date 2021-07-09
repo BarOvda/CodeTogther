@@ -8,8 +8,11 @@
 import SwiftUI
 
 struct SkillView: View {
+
+    @State var skill: String? = "Kotlin"
+
     var body: some View {
-        Text("Kotlin")
+        Text(skill!)
             .padding(10)
             .font(.system(size: 12))
            

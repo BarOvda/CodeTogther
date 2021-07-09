@@ -29,7 +29,7 @@ struct HomeComponent: View {
                     
                     TabView(selection: $currentTab){
                         
-                        HomeView()
+                        HomeView(currentTab: $currentTab)
                             .tabItem {
                                 
                                 Image(systemName: "bag.fill")
@@ -40,7 +40,7 @@ struct HomeComponent: View {
                             }
                             .tag(HomeTabs.HomeTab)
                         
-                        MyProjectsView()
+                        MyProjectsView(currentTab: $currentTab)
                             .tabItem {
                                 
                                 Image(systemName: "bag.fill.badge.plus")

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Firebase
 
 enum AppStartUpState
 {
@@ -14,12 +15,25 @@ enum AppStartUpState
     case Home
 }
 
+
 struct ContentView: View {
-    
+   
     @State var appState: AppStartUpState = .Login
     
     
     var body: some View {
+        HStack{
+            
+        }.onAppear{
+            
+            if Auth.auth().currentUser == nil{
+                appState = .Login
+            }else{
+                appState = .Home
+            }
+            
+        }
+        
         if appState == .Login{
             LoginView(appState: $appState)
         }
