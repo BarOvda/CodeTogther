@@ -1,9 +1,4 @@
-//
-//  profile-view.swift
-//  CodeTogether
-//
-//  Created by user on 01/07/2021.
-//
+
 
 import SwiftUI
 import Firebase

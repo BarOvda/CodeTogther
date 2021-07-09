@@ -1,10 +1,4 @@
-//
-//  circular-logo-view.swift
-//  CodeTogether
-//
-//  Created by user on 30/06/2021.
-//
-//
+
 import SwiftUI
 
 struct CircularLogoView: View {

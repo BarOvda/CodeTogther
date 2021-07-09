@@ -1,9 +1,4 @@
-//
-//  profile-view.swift
-//  CodeTogether
-//
-//  Created by user on 01/07/2021.
-//
+
 
 import SwiftUI
 import Firebase
@@ -125,7 +120,7 @@ struct MapView: View {
                 .padding(.top)
             
             Map(coordinateRegion: $region, annotationItems: annoations) { loc in
-//                    MapPin(coordinate: loc.coordinate, tint: .green)
+
                 MapMarker(coordinate: loc.coordinate, tint: .red)
             }
                 .frame(height: 200, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
@@ -242,7 +237,7 @@ struct SkillsView: View {
         GridItem(.flexible())
     ]
     var body: some View{
-//        GeometryReader{ geo in
+
         VStack(alignment: .leading){
             HStack{
                 Text("Skills")

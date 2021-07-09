@@ -1,9 +1,3 @@
-//
-//  project.swift
-//  CodeTogether
-//
-//  Created by user on 05/07/2021.
-//
 
 import Foundation
 

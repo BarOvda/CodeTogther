@@ -1,9 +1,4 @@
-//
-//  profile-view.swift
-//  CodeTogether
-//
-//  Created by user on 30/06/2021.
-//
+
 
 import SwiftUI
 import Firebase
@@ -169,7 +164,7 @@ struct StackView: View {
         GridItem(.flexible())
     ]
     var body: some View{
-        //        GeometryReader{ geo in
+
         VStack(alignment: .leading){
             
             LazyVGrid(columns: columns, spacing: 10) {
